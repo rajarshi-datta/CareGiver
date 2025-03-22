@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages & Notifications</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'message_dashboard.css' %}">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-right">
+            <div class="profile">
+                <img src="{% static 'profile.jpg' %}" alt="Profile">
+                <span>{{ request.user.username }}</span>
+            </div>
+            <div class="nav-icons">
+                <i class="fas fa-bell"></i>
+                <a href="{% url 'user_logout' %}"><i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="dashboard">
+        <main class="content">
+            <section id="messages-notifications" class="card">
+                <h2>Messages & Notifications</h2>
+                
+                <!-- CSRF Token -->
+                <form method="POST">
+                    {% csrf_token %}
+                </form>
+
+                <div class="message-list">
+                    {% for message in messages %}
+                    <div class="message" id="message-{{ message.id }}">
+                        <p><strong>{{ message.title }}:</strong> {{ message.content }}</p>
+                        <span class="timestamp">{{ message.timestamp }}</span>
+                        <button class="delete-btn" onclick="deleteMessage({{ message.id }})">Delete</button>
+                    </div>
+                    {% empty %}
+                    <p>No messages available.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+
+        <aside class="sidebar">
+            <h3>Dashboard</h3>
+            <a href="{% url 'resident_dashboard' %}">Resident Dashboard</a>
+            <a href="{% url 'resident_profile' %}">Resident Profile</a>
+            <a href="{% url 'healthcare_status' %}">Healthcare Status</a>
+            <a href="{% url 'user_logout' %}" class="logout">Logout</a>
+        </aside>
+    </div>
+    <script>
+        function deleteMessage(messageId) {
+            if (confirm("Are you sure you want to delete this message?")) {
+                fetch(`/delete-message/${messageId}/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCSRFToken()  // ✅ Correctly gets CSRF token
+                    },
+                    body: JSON.stringify({})  // ✅ Fix: Ensures a valid JSON body
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById("message-" + messageId).remove();
+                    } else {
+                        alert("Failed to delete message.");
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+            }
+        }
+    
+        function getCSRFToken() {
+            let csrfTokenElement = document.querySelector("[name=csrfmiddlewaretoken]");
+            return csrfTokenElement ? csrfTokenElement.value : "";
+        }
+    </script>
+    
+
+</body>
+</html>
